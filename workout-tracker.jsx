@@ -324,7 +324,14 @@ function recentMonths(n = 12) {
 }
 
 // ---------- Cloud sync (Supabase): real-time groups and leaderboards ----------
-const SUPABASE_CDN = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4";
+const SUPABASE_CDN = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.0";
+
+// Built-in project settings. These are public values: the database's Row Level Security
+// rules control what anyone can read or write. Never put a service_role key here.
+const DEFAULT_CLOUD = {
+  url: "https://vtyzinxueylxzdefujcz.supabase.co",
+  anonKey: "sb_publishable_94KnGI5QVQOq7_5SUe45lg_p37rGR93",
+};
 
 function loadSupabaseLib() {
   return new Promise((resolve, reject) => {
@@ -342,7 +349,7 @@ function loadSupabaseLib() {
 }
 
 function useCloud(username) {
-  const [config, setConfigState] = useState(() => store.get("liftlog:cloud") || { url: "", anonKey: "" });
+  const [config, setConfigState] = useState(() => ({ ...DEFAULT_CLOUD, ...(store.get("liftlog:cloud") || {}) }));
   const [client, setClient] = useState(null);
   const [status, setStatus] = useState("idle"); // idle | connecting | connected | error
   const [error, setError] = useState("");
@@ -472,6 +479,11 @@ function useCloud(username) {
 
 function CloudGroupPanel({ cloud, username }) {
   const [month, setMonth] = useState(currentMonth());
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  useEffect(() => {
+    if (cloud.status === "idle" && cloud.config.url && cloud.config.anonKey) cloud.connect();
+  }, []);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [groupName, setGroupName] = useState("");
@@ -485,12 +497,33 @@ function CloudGroupPanel({ cloud, username }) {
     return () => { alive = false; };
   }, [cloud.status, cloud.group, cloud.members, month]);
 
-  if (cloud.status !== "connected") {
+  if (cloud.status !== "connected" && cloud.status !== "error") {
     return (
       <Card>
-        <h3 style={{ marginTop: 0, fontSize: 16 }}>Connect your group</h3>
+        <p style={{ margin: 0, color: "#a1a1aa" }}>Connecting to your group…</p>
+      </Card>
+    );
+  }
+
+  if (cloud.status === "error" && !showAdvanced) {
+    return (
+      <Card>
+        <h3 style={{ marginTop: 0, fontSize: 16 }}>Couldn't connect</h3>
+        <p role="alert" style={{ color: "#f87171", fontSize: 14, marginTop: 0 }}>{cloud.error}</p>
+        <div style={{ display: "flex", gap: 8 }}>
+          <Btn onClick={cloud.connect} style={{ flex: 1 }}>Try again</Btn>
+          <Btn variant="ghost" onClick={() => setShowAdvanced(true)} style={{ flex: 1 }}>Advanced</Btn>
+        </div>
+      </Card>
+    );
+  }
+
+  if (cloud.status === "error" && showAdvanced) {
+    return (
+      <Card>
+        <h3 style={{ marginTop: 0, fontSize: 16 }}>Advanced connection settings</h3>
         <p style={{ color: "#9ca3af", fontSize: 13, marginTop: 0 }}>
-          Paste your Supabase project URL and anon public key (Project Settings → API). See the setup guide for step-by-step instructions.
+          Only change these if you're using a different Supabase project. See the setup guide.
         </p>
         <label style={labelStyle} htmlFor="sb-url">Project URL</label>
         <input id="sb-url" placeholder="https://xxxx.supabase.co" value={cloud.config.url} onChange={(e) => cloud.setConfig({ ...cloud.config, url: e.target.value })} style={{ ...inputStyle, marginBottom: 10 }} />

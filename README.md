@@ -57,13 +57,15 @@ Upload `index.html` to a free static host such as Netlify Drop or GitHub Pages. 
 
 ## Setting up cloud groups (optional)
 
+The app ships with the project URL and public key built in, so friends only need an invite code. If you fork this project onto a different Supabase project, change `DEFAULT_CLOUD` in `workout-tracker.jsx` (and `index.html`) to your own URL and publishable key.
+
 Only one person needs to set this up. Full instructions are in `liftlog-cloud-setup.md`. In short:
 
 1. Create a free Supabase project.
 2. Run `liftlog-supabase-schema.sql` in the SQL Editor.
 3. Turn on **Anonymous Sign-Ins** under Authentication.
 4. Copy the Project URL and the **anon public** key from Project Settings → API. Never use the `service_role` key in the app.
-5. In the app, open **Friends**, paste the URL and key, tap **Connect**, then **Create group**. Share the invite code with friends. They paste it under **Join with a code**.
+5. The app is already connected to the project. Open **Friends**, tap **Create group**, and share the invite code. Share the invite code with friends. They paste it under **Join with a code**.
 
 ## Where your data lives
 
